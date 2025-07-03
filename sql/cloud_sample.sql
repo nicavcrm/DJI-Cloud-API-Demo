@@ -210,9 +210,11 @@ VALUES
 	(41, 1, 99, 0, 'M4TD Camera', NULL),
 	(42, 3, 3, 0, 'Dock3', NULL),
   /* H30 */
-  (43, 0, 78, 0, 'H30', NULL),
+  (43, 1, 78, 0, 'H30', NULL),
   /* H30T */
-  (44, 0, 78, 1, 'H30T', NULL),
+  (44, 1, 78, 1, 'H30T', NULL),
+  /* M400 */
+  (45, 0, 181, 0, 'M400', NULL),
   ;
 
 /*!40000 ALTER TABLE `manage_device_dictionary` ENABLE KEYS */;
