@@ -29,6 +29,8 @@ public enum StateDataKeyEnum {
 
     RC_PAYLOAD_FIRMWARE(ChannelName.INBOUND_STATE_RC_PAYLOAD_FIRMWARE, PayloadFirmwareVersion.class),
 
+    RC_CLOUD_CONTROL_AUTH(ChannelName.INBOUND_STATE_RC_CLOUD_CONTROL_AUTH, RcCloudControlAuth.class),
+
     DOCK_FIRMWARE_VERSION(ChannelName.INBOUND_STATE_DOCK_FIRMWARE_VERSION, DockFirmwareVersion.class),
 
     DOCK_LIVE_CAPACITY(ChannelName.INBOUND_STATE_DOCK_LIVESTREAM_ABILITY_UPDATE, DockLivestreamAbilityUpdate.class),

@@ -44,6 +44,8 @@ public class ChannelName {
 
     public static final String INBOUND_STATE_RC_PAYLOAD_FIRMWARE = "inboundStateRcPayloadFirmware";
 
+    public static final String INBOUND_STATE_RC_CLOUD_CONTROL_AUTH = "inboundStateRcCloudControlAuth";
+
     public static final String INBOUND_STATE_DOCK_DRONE_WPMZ_VERSION = "inboundStateDockDroneWpmzVersion";
 
     public static final String INBOUND_STATE_DOCK_DRONE_THERMAL_SUPPORTED_PALETTE_STYLE = "inboundStateDockDronePayload";

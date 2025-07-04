@@ -25,6 +25,8 @@ public enum RcStateDataKeyEnum {
     LIVE_STATUS(Set.of("live_status"), RcLiveStatus.class),
 
     PAYLOAD_FIRMWARE(PayloadModelConst.getAllModelWithPosition(), PayloadFirmwareVersion.class),
+    
+    CLOUD_CONTROL_AUTH(Set.of("cloud_control_auth"), RcCloudControlAuth.class),
     ;
 
     private final Set<String> keys;
