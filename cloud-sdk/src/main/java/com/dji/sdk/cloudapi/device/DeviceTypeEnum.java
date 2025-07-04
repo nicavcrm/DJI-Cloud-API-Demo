@@ -90,6 +90,8 @@ public enum DeviceTypeEnum {
 
     M4TD_CAMERA(99),
 
+    M400_CAMERA(103),
+
     VISION_ASSIST(176),
     ;
 

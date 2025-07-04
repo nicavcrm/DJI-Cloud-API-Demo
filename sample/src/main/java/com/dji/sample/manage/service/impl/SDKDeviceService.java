@@ -497,4 +497,31 @@ public class SDKDeviceService extends AbstractDeviceService {
             deviceRedisService.setDeviceOsd(dockSn, oldDock);
         }
     }
+
+    @Override
+    public void rcLiveStatusUpdate(TopicStateRequest<RcLiveStatus> request, MessageHeaders headers) {
+        log.debug("Received RC live status update from {} with data: {}", request.getFrom(), request.getData());
+        
+        // Get the device information
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getFrom());
+        if (deviceOpt.isEmpty()) {
+            log.warn("Device {} not found online for live status update", request.getFrom());
+            return;
+        }
+        
+        DeviceDTO device = deviceOpt.get();
+        if (!StringUtils.hasText(device.getWorkspaceId())) {
+            log.warn("Device {} has no workspace ID for live status update", request.getFrom());
+            return;
+        }
+        
+        // Process live status update - you can add custom logic here
+        // For now, just log the status
+        if (request.getData() != null && request.getData().getLiveStatus() != null) {
+            request.getData().getLiveStatus().forEach(status -> 
+                log.info("RC {} live status - Video ID: {}, Status: {}, Quality: {}", 
+                    request.getFrom(), status.getVideoId(), status.getStatus(), status.getVideoQuality())
+            );
+        }
+    }
 }
