@@ -211,9 +211,7 @@ VALUES
 	(42, 3, 3, 0, 'Dock3', NULL),
   (43, 1, 78, 0, 'H30', NULL),
   (44, 1, 78, 1, 'H30T', NULL),
-  (45, 0, 181, 0, 'M400', NULL),
-  /* M400 Camera */
-  (46, 1, 103, 0, 'M400 Camera', NULL),
+  (45, 0, 103, 0, 'M400', NULL),
   ;
 
 /*!40000 ALTER TABLE `manage_device_dictionary` ENABLE KEYS */;

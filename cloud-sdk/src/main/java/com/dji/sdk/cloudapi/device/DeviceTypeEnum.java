@@ -70,7 +70,7 @@ public enum DeviceTypeEnum {
 
     M3TD_CAMERA(81),
 
-    M400(181),
+    M400(103),
 
     M4(99),
 
@@ -89,8 +89,6 @@ public enum DeviceTypeEnum {
     M4D_CAMERA(98),
 
     M4TD_CAMERA(99),
-
-    M400_CAMERA(103),
 
     VISION_ASSIST(176),
     ;

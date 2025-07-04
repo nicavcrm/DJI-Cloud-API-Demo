@@ -104,8 +104,6 @@ public enum DeviceEnum {
 
     M4TD_CAMERA(DeviceDomainEnum.PAYLOAD, DeviceTypeEnum.M4TD_CAMERA, DeviceSubTypeEnum.ZERO),
 
-    M400_CAMERA(DeviceDomainEnum.PAYLOAD, DeviceTypeEnum.M400_CAMERA, DeviceSubTypeEnum.ZERO),
-
     M3D_VISION_ASSIST(DeviceDomainEnum.PAYLOAD, DeviceTypeEnum.VISION_ASSIST, DeviceSubTypeEnum.ZERO),
 
     M3TD_VISION_ASSIST(DeviceDomainEnum.PAYLOAD, DeviceTypeEnum.VISION_ASSIST, DeviceSubTypeEnum.ZERO),
