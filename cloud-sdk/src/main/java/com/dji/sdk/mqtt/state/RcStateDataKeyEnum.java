@@ -2,6 +2,9 @@ package com.dji.sdk.mqtt.state;
 
 import com.dji.sdk.cloudapi.device.*;
 import com.dji.sdk.cloudapi.livestream.RcLivestreamAbilityUpdate;
+import com.dji.sdk.cloudapi.property.DockDroneCommanderFlightHeight;
+import com.dji.sdk.cloudapi.property.DockDroneCommanderModeLostAction;
+import com.dji.sdk.cloudapi.property.DockDroneRthMode;
 import com.dji.sdk.exception.CloudSDKException;
 
 import java.util.Arrays;
@@ -29,6 +32,18 @@ public enum RcStateDataKeyEnum {
     CLOUD_CONTROL_AUTH(Set.of("cloud_control_auth"), RcCloudControlAuth.class),
     
     DONGLE_INFOS(Set.of("dongle_infos"), DongleInfos.class),
+    
+    PSDK_WIDGET_VALUES(Set.of("psdk_widget_values"), PsdkWidgetValues.class),
+    
+    COMMANDER_MODE_LOST_ACTION(Set.of("commander_mode_lost_action"), DockDroneCommanderModeLostAction.class),
+    
+    COMMANDER_FLIGHT_MODE(Set.of("commander_flight_mode"), DockDroneCurrentCommanderFlightMode.class),
+    
+    COMMANDER_FLIGHT_HEIGHT(Set.of("commander_flight_height"), DockDroneCommanderFlightHeight.class),
+    
+    RTH_MODE(Set.of("rth_mode"), DockDroneRthMode.class),
+    
+    CAPABILITY_SET(Set.of("capability_set"), CapabilitySet.class),
     ;
 
     private final Set<String> keys;

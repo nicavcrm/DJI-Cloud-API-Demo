@@ -11,16 +11,16 @@ public class RcCloudControlAuth {
 
     @NotNull
     @JsonProperty("cloud_control_auth")
-    private Integer cloudControlAuth;
+    private Object cloudControlAuth;
 
     public RcCloudControlAuth() {
     }
 
-    public Integer getCloudControlAuth() {
+    public Object getCloudControlAuth() {
         return cloudControlAuth;
     }
 
-    public void setCloudControlAuth(Integer cloudControlAuth) {
+    public void setCloudControlAuth(Object cloudControlAuth) {
         this.cloudControlAuth = cloudControlAuth;
     }
 

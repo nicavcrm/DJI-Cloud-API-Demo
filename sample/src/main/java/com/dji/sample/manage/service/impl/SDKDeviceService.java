@@ -199,12 +199,17 @@ public class SDKDeviceService extends AbstractDeviceService {
         deviceRedisService.setDeviceOnline(device);
 
         OsdRemoteControl data = request.getData();
-        deviceService.pushOsdDataToPilot(device.getWorkspaceId(), from,
-                new DeviceOsdHost()
-                        .setLatitude(data.getLatitude())
-                        .setLongitude(data.getLongitude())
-                        .setHeight(data.getHeight()));
-        deviceService.pushOsdDataToWeb(device.getWorkspaceId(), BizCodeEnum.RC_OSD, from, data);
+        String workspaceId = device.getWorkspaceId();
+        if (StringUtils.hasText(workspaceId)) {
+            deviceService.pushOsdDataToPilot(workspaceId, from,
+                    new DeviceOsdHost()
+                            .setLatitude(data.getLatitude())
+                            .setLongitude(data.getLongitude())
+                            .setHeight(data.getHeight()));
+            deviceService.pushOsdDataToWeb(workspaceId, BizCodeEnum.RC_OSD, from, data);
+        } else {
+            log.warn("Device {} has no workspace ID configured, skipping WebSocket broadcast", from);
+        }
 
     }
 
