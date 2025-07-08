@@ -27,6 +27,8 @@ public enum RcStateDataKeyEnum {
     PAYLOAD_FIRMWARE(PayloadModelConst.getAllModelWithPosition(), PayloadFirmwareVersion.class),
     
     CLOUD_CONTROL_AUTH(Set.of("cloud_control_auth"), RcCloudControlAuth.class),
+    
+    DONGLE_INFOS(Set.of("dongle_infos"), DongleInfos.class),
     ;
 
     private final Set<String> keys;
