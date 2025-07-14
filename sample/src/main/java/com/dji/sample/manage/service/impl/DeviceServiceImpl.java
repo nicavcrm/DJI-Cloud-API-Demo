@@ -155,7 +155,11 @@ public class DeviceServiceImpl implements IDeviceService {
 
         deviceRedisService.subDeviceOffline(deviceOpt.get().getChildDeviceSn());
         deviceRedisService.gatewayOffline(gatewaySn);
-        offlineUnsubscribeTopic(SDKManager.getDeviceSDK(gatewaySn));
+        try {
+            offlineUnsubscribeTopic(SDKManager.getDeviceSDK(gatewaySn));
+        } catch (CloudSDKException e) {
+            log.warn("Device {} not registered in SDK, skipping topic unsubscription: {}", gatewaySn, e.getMessage());
+        }
         // Publish the latest device topology information in the current workspace.
         pushDeviceOfflineTopo(deviceOpt.get().getWorkspaceId(), gatewaySn);
         log.debug("{} offline.", gatewaySn);
