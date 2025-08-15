@@ -44,6 +44,8 @@ public enum RcStateDataKeyEnum {
     RTH_MODE(Set.of("rth_mode"), DockDroneRthMode.class),
     
     CAPABILITY_SET(Set.of("capability_set"), CapabilitySet.class),
+    
+    CAMERA_WATERMARK_SETTINGS(Set.of("camera_watermark_settings"), CameraWatermarkSettings.class),
     ;
 
     private final Set<String> keys;
