@@ -175,6 +175,8 @@ public class SDKDeviceService extends AbstractDeviceService {
         }
 
         DeviceDTO device = deviceOpt.get();
+        // Ensure device is marked as online when OSD messages are received
+        device.setStatus(true);
         deviceRedisService.setDeviceOnline(device);
         deviceRedisService.setDeviceOsd(from, request.getData());
 
@@ -229,6 +231,8 @@ public class SDKDeviceService extends AbstractDeviceService {
             log.error("Please bind the drone first.");
         }
 
+        // Ensure device is marked as online when OSD messages are received
+        device.setStatus(true);
         deviceRedisService.setDeviceOnline(device);
 
         OsdRcDrone data = request.getData();
