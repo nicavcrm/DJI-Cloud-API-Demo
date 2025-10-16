@@ -136,6 +136,8 @@ public class SDKDeviceService extends AbstractDeviceService {
     public void osdDock(TopicOsdRequest<OsdDock> request, MessageHeaders headers) {
         String from = request.getFrom();
         Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(from);
+        boolean wasOffline = deviceOpt.isEmpty();
+
         if (deviceOpt.isEmpty() || !StringUtils.hasText(deviceOpt.get().getWorkspaceId())) {
             deviceOpt = deviceService.getDeviceBySn(from);
             if (deviceOpt.isEmpty()) {
@@ -156,6 +158,13 @@ public class SDKDeviceService extends AbstractDeviceService {
         fillDockOsd(from, request.getData());
 
         deviceService.pushOsdDataToWeb(device.getWorkspaceId(), BizCodeEnum.DOCK_OSD, from, request.getData());
+
+        // If the dock was previously offline, fire the DEVICE_ONLINE WebSocket event
+        // This ensures Dock 3 and other docks that don't send status messages still trigger online events
+        if (wasOffline && StringUtils.hasText(device.getWorkspaceId())) {
+            log.debug("Dock {} came online via OSD, firing DEVICE_ONLINE event", from);
+            deviceService.pushDeviceOnlineTopo(device.getWorkspaceId(), from, device.getChildDeviceSn());
+        }
     }
 
     @Override

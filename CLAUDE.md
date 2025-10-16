@@ -93,5 +93,38 @@ Before running, configure in `sample/src/main/resources/application.yml`:
 - DJI Cloud API credentials
 - Storage provider (if using media features)
 
+### SDK Architecture and Extension Points
+
+The cloud-sdk module provides abstract base classes for extending functionality:
+- `AbstractDeviceService`: Device lifecycle management (online/offline events)
+- `AbstractControlService`: Drone control commands
+- `AbstractWaylineService`: Flight mission management
+- `AbstractLivestreamService`: Live video streaming
+- `AbstractMediaService`: Media file operations
+- `AbstractFirmwareService`: Firmware update operations
+
+To extend functionality:
+1. Create a class extending the appropriate abstract service
+2. Override required methods to implement business logic
+3. Register the class as a Spring bean using `@Service` annotation
+
+### Technology Stack
+
+**Backend Framework**: Spring Boot 2.7.12 with Java 11
+**Database**: MySQL 8.0+ with MyBatis Plus for ORM
+**Message Broker**: MQTT (Eclipse Paho) for device communication
+**Cache**: Redis for session and data caching
+**Storage**: Pluggable OSS providers (MinIO, Aliyun OSS, AWS S3)
+**Authentication**: JWT with Auth0 library
+**Documentation**: Swagger/OpenAPI 3 at `/swagger-ui/index.html`
+
+### Key Enums and Constants
+
+Device types are managed through:
+- `DeviceEnum`: Supported device models (M30, M300, M3D, M3T, M3M, M400)
+- `DeviceTypeEnum`: Device categories (DOCK, AIRCRAFT, RC)
+- `PayloadModelEnum`: Camera and payload types
+- State management through `RcStateDataKeyEnum`
+
 ### Recent Development Focus
 Current work involves adding support for new drone models (M400, H30, H30T) and enhancing remote control cloud authentication features. Device information is managed through SQL dictionary tables.
