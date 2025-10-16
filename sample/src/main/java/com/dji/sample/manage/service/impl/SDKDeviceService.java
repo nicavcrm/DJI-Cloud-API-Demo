@@ -12,6 +12,7 @@ import com.dji.sample.manage.service.IDeviceRedisService;
 import com.dji.sample.manage.service.IDeviceService;
 import com.dji.sdk.cloudapi.device.*;
 import com.dji.sdk.cloudapi.device.api.AbstractDeviceService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dji.sdk.cloudapi.tsa.DeviceIconUrl;
 import com.dji.sdk.cloudapi.tsa.IconUrlEnum;
 import com.dji.sdk.config.version.GatewayManager;
@@ -56,6 +57,9 @@ public class SDKDeviceService extends AbstractDeviceService {
 
     @Autowired
     private IDevicePayloadService devicePayloadService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Override
     public TopicStatusResponse<MqttReply> updateTopoOnline(TopicStatusRequest<UpdateTopo> request, MessageHeaders headers) {
@@ -135,61 +139,180 @@ public class SDKDeviceService extends AbstractDeviceService {
     @Override
     public void osdDock(TopicOsdRequest<OsdDock> request, MessageHeaders headers) {
         String from = request.getFrom();
+
+        // Check if this might be a Dock 3 device by looking at the type first
+        Optional<DeviceDTO> deviceOpt = deviceService.getDeviceBySn(from);
+        boolean isPotentialDock3 = deviceOpt.isPresent() &&
+                                 DeviceDomainEnum.DOCK == deviceOpt.get().getDomain() &&
+                                 DeviceTypeEnum.DOCK3 == deviceOpt.get().getType();
+
+        // If this is a Dock 3 device, try to handle snake_case format
+        if (isPotentialDock3) {
+            log.debug("Potential Dock 3 device detected: {}, attempting special JSON handling", from);
+            try {
+                // Get the raw payload as string to check the format
+                String rawPayload = objectMapper.writeValueAsString(request.getData());
+                log.debug("Raw payload for potential Dock 3 {}: {}", from, rawPayload);
+
+                // Check if this is snake_case format (Dock 3)
+                boolean isSnakeCaseFormat = rawPayload.contains("\"network_state\"") ||
+                                          rawPayload.contains("\"drone_in_dock\"") ||
+                                          rawPayload.contains("\"environment_temperature\"") ||
+                                          rawPayload.contains("\"drone_charge_state\"");
+
+                if (isSnakeCaseFormat) {
+                    log.info("Detected Dock 3 snake_case format for device: {}, performing custom deserialization", from);
+
+                    // Parse the raw JSON using Dock 3 specific class
+                    OsdDock3 dock3Osd = objectMapper.readValue(rawPayload, OsdDock3.class);
+                    OsdDock standardDock = dock3Osd.toStandardOsdDock();
+
+                    log.debug("Successfully converted Dock 3 OSD to standard format for: {}", from);
+                    log.debug("Converted data: networkState={}, droneInDock={}, temperature={}",
+                        standardDock.getNetworkState(), standardDock.getDroneInDock(), standardDock.getTemperature());
+
+                    // Create a new request with the properly deserialized data
+                    TopicOsdRequest<OsdDock> correctedRequest = new TopicOsdRequest<OsdDock>()
+                            .setGateway(request.getGateway())
+                            .setFrom(request.getFrom())
+                            .setData(standardDock)
+                            .setBid(request.getBid())
+                            .setTid(request.getTid())
+                            .setTimestamp(request.getTimestamp());
+
+                    // Process the corrected request
+                    processDockOsd(correctedRequest, headers);
+                    return;
+                }
+            } catch (Exception e) {
+                log.warn("Failed to process as Dock 3 format for device {}, falling back to standard processing: {}", from, e.getMessage());
+            }
+        }
+
+        // Standard processing for Dock 1/2 or if Dock 3 processing failed
+        processDockOsd(request, headers);
+    }
+
+    /**
+     * Core OSD processing logic for all dock types
+     */
+    private void processDockOsd(TopicOsdRequest<OsdDock> request, MessageHeaders headers) {
+        String from = request.getFrom();
         Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(from);
         boolean wasOffline = deviceOpt.isEmpty();
+
+        // Enhanced logging for Dock 3 debugging
+        log.debug("Received OSD message from dock: {}, wasOffline: {}", from, wasOffline);
 
         if (deviceOpt.isEmpty() || !StringUtils.hasText(deviceOpt.get().getWorkspaceId())) {
             deviceOpt = deviceService.getDeviceBySn(from);
             if (deviceOpt.isEmpty()) {
-                log.error("Please restart the drone.");
+                log.error("Dock {} not found in database. Please restart the dock or check device registration.", from);
+                return;
+            }
+        }
+
+        DeviceDTO device = deviceOpt.get();
+
+        // Enhanced device validation and logging
+        log.debug("Processing OSD for dock: {} - Domain: {}, Type: {}, SubType: {}, WorkspaceId: {}, ChildDeviceSn: {}",
+            from, device.getDomain(), device.getType(), device.getSubType(), device.getWorkspaceId(), device.getChildDeviceSn());
+
+        if (!StringUtils.hasText(device.getWorkspaceId())) {
+            log.error("Dock {} is not bound to any workspace. Please bind the dock first.", from);
+        }
+        if (StringUtils.hasText(device.getChildDeviceSn())) {
+            deviceService.getDeviceBySn(device.getChildDeviceSn()).ifPresent(device::setChildren);
+        }
+
+        // Mark device as online and store OSD data
+        deviceRedisService.setDeviceOnline(device);
+        fillDockOsd(from, request.getData());
+
+        // Always send DOCK_OSD WebSocket event for real-time monitoring
+        if (StringUtils.hasText(device.getWorkspaceId())) {
+            deviceService.pushOsdDataToWeb(device.getWorkspaceId(), BizCodeEnum.DOCK_OSD, from, request.getData());
+            log.debug("Sent DOCK_OSD WebSocket event for dock: {}", from);
+        } else {
+            log.warn("Skipping DOCK_OSD WebSocket event for dock {} - no workspace ID configured", from);
+        }
+
+        // Enhanced online event handling for Dock 3 and other docks
+        if (wasOffline && StringUtils.hasText(device.getWorkspaceId())) {
+            log.info("Dock {} (Domain: {}, Type: {}) came online via OSD, firing DEVICE_ONLINE event",
+                from, device.getDomain(), device.getType());
+
+            // Check if this is a Dock 3 device for special handling
+            boolean isDock3 = DeviceDomainEnum.DOCK == device.getDomain() &&
+                             DeviceTypeEnum.DOCK3 == device.getType();
+
+            if (isDock3) {
+                log.info("Successfully processed Dock 3 OSD data for device: {}", from);
+            }
+
+            // Fire the DEVICE_ONLINE WebSocket event
+            try {
+                deviceService.pushDeviceOnlineTopo(device.getWorkspaceId(), from, device.getChildDeviceSn());
+                log.info("Successfully fired DEVICE_ONLINE WebSocket event for dock: {} (Dock3: {})", from, isDock3);
+            } catch (Exception e) {
+                log.error("Failed to fire DEVICE_ONLINE WebSocket event for dock {}: {}", from, e.getMessage(), e);
+            }
+        } else if (wasOffline) {
+            log.warn("Dock {} came online but no workspace ID configured - skipping DEVICE_ONLINE event", from);
+        }
+    }
+
+  
+    @Override
+    public void osdDockDrone(TopicOsdRequest<OsdDockDrone> request, MessageHeaders headers) {
+        String from = request.getFrom();
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(from);
+        boolean wasOffline = deviceOpt.isEmpty();
+
+        if (deviceOpt.isEmpty()) {
+            deviceOpt = deviceService.getDeviceBySn(from);
+            if (deviceOpt.isEmpty()) {
+                log.error("Drone {} not found in database. Please restart the drone.", from);
                 return;
             }
         }
 
         DeviceDTO device = deviceOpt.get();
         if (!StringUtils.hasText(device.getWorkspaceId())) {
-            log.error("Please bind the dock first.");
-        }
-        if (StringUtils.hasText(device.getChildDeviceSn())) {
-            deviceService.getDeviceBySn(device.getChildDeviceSn()).ifPresent(device::setChildren);
+            log.error("Drone {} is not bound to any workspace. Please bind the drone first.", from);
         }
 
-        deviceRedisService.setDeviceOnline(device);
-        fillDockOsd(from, request.getData());
+        // Enhanced logging for drone OSD processing
+        log.debug("Processing OSD for drone: {} - Domain: {}, Type: {}, WorkspaceId: {}, wasOffline: {}",
+            from, device.getDomain(), device.getType(), device.getWorkspaceId(), wasOffline);
 
-        deviceService.pushOsdDataToWeb(device.getWorkspaceId(), BizCodeEnum.DOCK_OSD, from, request.getData());
-
-        // If the dock was previously offline, fire the DEVICE_ONLINE WebSocket event
-        // This ensures Dock 3 and other docks that don't send status messages still trigger online events
-        if (wasOffline && StringUtils.hasText(device.getWorkspaceId())) {
-            log.debug("Dock {} came online via OSD, firing DEVICE_ONLINE event", from);
-            deviceService.pushDeviceOnlineTopo(device.getWorkspaceId(), from, device.getChildDeviceSn());
-        }
-    }
-
-    @Override
-    public void osdDockDrone(TopicOsdRequest<OsdDockDrone> request, MessageHeaders headers) {
-        String from = request.getFrom();
-        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(from);
-        if (deviceOpt.isEmpty()) {
-            deviceOpt = deviceService.getDeviceBySn(from);
-            if (deviceOpt.isEmpty()) {
-                log.error("Please restart the drone.");
-                return;
-            }
-        }
-
-        if (!StringUtils.hasText(deviceOpt.get().getWorkspaceId())) {
-            log.error("Please restart the drone.");
-        }
-
-        DeviceDTO device = deviceOpt.get();
         // Ensure device is marked as online when OSD messages are received
         device.setStatus(true);
         deviceRedisService.setDeviceOnline(device);
         deviceRedisService.setDeviceOsd(from, request.getData());
 
-        deviceService.pushOsdDataToWeb(device.getWorkspaceId(), BizCodeEnum.DEVICE_OSD, from, request.getData());
+        // Always send DEVICE_OSD WebSocket event for real-time monitoring
+        if (StringUtils.hasText(device.getWorkspaceId())) {
+            deviceService.pushOsdDataToWeb(device.getWorkspaceId(), BizCodeEnum.DEVICE_OSD, from, request.getData());
+            log.debug("Sent DEVICE_OSD WebSocket event for drone: {}", from);
+        }
+
+        // If this is a drone from Dock 3 that was previously offline, ensure proper online event handling
+        if (wasOffline && StringUtils.hasText(device.getWorkspaceId())) {
+            log.info("Drone {} (from dock: {}) came online via OSD, ensuring WebSocket topology is updated",
+                from, device.getParentSn());
+
+            // Check if this drone belongs to a Dock 3
+            if (StringUtils.hasText(device.getParentSn())) {
+                deviceRedisService.getDeviceOnline(device.getParentSn()).ifPresent(parentDevice -> {
+                    boolean isDock3 = DeviceDomainEnum.DOCK == parentDevice.getDomain() &&
+                                   DeviceTypeEnum.DOCK3 == parentDevice.getType();
+                    if (isDock3) {
+                        log.info("Drone {} belongs to Dock 3 {} - enhanced online event handling", from, device.getParentSn());
+                    }
+                });
+            }
+        }
     }
 
     @Override
@@ -367,12 +490,25 @@ public class SDKDeviceService extends AbstractDeviceService {
             log.error("The dock is not bound, please bind it first and then go online.");
             return;
         }
+
+        // Check if this is a Dock 3 for enhanced logging
+        boolean isDock3 = DeviceTypeEnum.DOCK3 == gateway.getType();
+        if (isDock3) {
+            log.info("Dock 3 {} going online - enhanced processing initiated", gateway.getDeviceSn());
+        }
+
         if (!Objects.requireNonNullElse(subDevice.getBoundStatus(), false)) {
             // Directly bind the drone of the dock to the same workspace as the dock.
             deviceService.bindDevice(DeviceDTO.builder().deviceSn(subDevice.getDeviceSn()).workspaceId(gateway.getWorkspaceId()).build());
             subDevice.setWorkspaceId(gateway.getWorkspaceId());
         }
         deviceRedisService.setDeviceOnline(subDevice);
+
+        // Ensure dock is also marked as online for proper WebSocket event handling
+        deviceRedisService.setDeviceOnline(gateway);
+
+        log.debug("Dock {} (Type: {}) completed online process, sub-device: {}",
+            gateway.getDeviceSn(), gateway.getType(), subDevice.getDeviceSn());
     }
 
     private void changeSubDeviceParent(String deviceSn, String gatewaySn) {
