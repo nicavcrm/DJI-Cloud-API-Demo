@@ -183,6 +183,11 @@ public class SDKDeviceService extends AbstractDeviceService {
                             Optional<DeviceDTO> droneOpt = deviceService.getDeviceBySn(droneSn);
                             if (droneOpt.isPresent()) {
                                 DeviceDTO drone = droneOpt.get();
+
+                                // Check if drone was previously offline to trigger subscription
+                                Optional<DeviceDTO> existingDroneOpt = deviceRedisService.getDeviceOnline(droneSn);
+                                boolean wasDroneOffline = existingDroneOpt.isEmpty();
+
                                 drone.setStatus(true);
                                 drone.setParentSn(from);
 
@@ -192,7 +197,24 @@ public class SDKDeviceService extends AbstractDeviceService {
                                 }
 
                                 deviceRedisService.setDeviceOnline(drone);
-                                log.info("Marked drone {} as online in Redis with parent Dock 3 {}", droneSn, from);
+                                log.info("Marked drone {} as online in Redis with parent Dock 3 {} (wasOffline: {})", droneSn, from, wasDroneOffline);
+
+                                // CRITICAL FIX: Trigger sub-device subscription when drone comes online via Dock 3
+                                if (wasDroneOffline && StringUtils.hasText(drone.getWorkspaceId())) {
+                                    try {
+                                        // Get the SDK GatewayManager for this dock
+                                        GatewayManager gatewayManager = SDKManager.getDeviceSDK(from);
+                                        if (gatewayManager != null) {
+                                            log.info("Dock 3 {} - triggering sub-device subscription for newly online drone: {}", from, droneSn);
+                                            deviceService.subDeviceOnlineSubscribeTopic(gatewayManager);
+                                            log.info("Dock 3 {} - successfully subscribed to drone topics for: {}", from, droneSn);
+                                        } else {
+                                            log.warn("Dock 3 {} - GatewayManager not found, cannot subscribe to sub-device topics for drone: {}", from, droneSn);
+                                        }
+                                    } catch (Exception e) {
+                                        log.error("Dock 3 {} - Failed to subscribe to sub-device topics for drone {}: {}", from, droneSn, e.getMessage(), e);
+                                    }
+                                }
                             } else {
                                 log.warn("Drone {} not found in database, cannot mark as online", droneSn);
                             }
