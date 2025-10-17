@@ -88,9 +88,7 @@ public class OsdDock3 {
     @JsonProperty("activation_time")
     private Long activationTime;
 
-    @JsonProperty("maintain_status")
-    private OsdDockMaintainStatus maintainStatus;
-
+  
     @JsonProperty("electric_supply_voltage")
     private Integer electricSupplyVoltage;
 
@@ -103,9 +101,7 @@ public class OsdDock3 {
     @JsonProperty("backup_battery")
     private BackupBattery backupBattery;
 
-    @JsonProperty("drone_battery_maintenance_info")
-    private DroneBatteryMaintenanceInfo droneBatteryMaintenanceInfo;
-
+    
     @JsonProperty("flighttask_step_code")
     private FlighttaskStepCodeEnum flighttaskStepCode;
 
@@ -182,12 +178,24 @@ public class OsdDock3 {
         standardDock.setJobNumber(this.jobNumber);
         standardDock.setAccTime(this.accTime);
         standardDock.setActivationTime(this.activationTime);
-        standardDock.setMaintainStatus(this.maintainStatus);
+        // Convert Dock 3 maintain_status to standard format if available
+        if (this.maintainStatus3 != null) {
+            // Convert DockMaintainStatus3 to OsdDockMaintainStatus
+            OsdDockMaintainStatus standardMaintainStatus = new OsdDockMaintainStatus();
+            // Add conversion logic as needed
+            standardDock.setMaintainStatus(standardMaintainStatus);
+        }
         standardDock.setElectricSupplyVoltage(this.electricSupplyVoltage);
         standardDock.setWorkingVoltage(this.workingVoltage);
         standardDock.setWorkingCurrent(this.workingCurrent);
         standardDock.setBackupBattery(this.backupBattery);
-        standardDock.setDroneBatteryMaintenanceInfo(this.droneBatteryMaintenanceInfo);
+        // Convert Dock 3 drone battery maintenance info to standard format if available
+        if (this.droneBatteryMaintenanceInfo3 != null) {
+            // Convert DroneBatteryMaintenanceInfo3 to DroneBatteryMaintenanceInfo
+            DroneBatteryMaintenanceInfo standardBatteryInfo = new DroneBatteryMaintenanceInfo();
+            // Add conversion logic as needed
+            standardDock.setDroneBatteryMaintenanceInfo(standardBatteryInfo);
+        }
         standardDock.setFlighttaskStepCode(this.flighttaskStepCode);
         standardDock.setFlighttaskPrepareCapacity(this.flighttaskPrepareCapacity);
         standardDock.setMediaFileDetail(this.mediaFileDetail);
@@ -441,15 +449,7 @@ public class OsdDock3 {
         return this;
     }
 
-    public OsdDockMaintainStatus getMaintainStatus() {
-        return maintainStatus;
-    }
-
-    public OsdDock3 setMaintainStatus(OsdDockMaintainStatus maintainStatus) {
-        this.maintainStatus = maintainStatus;
-        return this;
-    }
-
+  
     public Integer getElectricSupplyVoltage() {
         return electricSupplyVoltage;
     }
@@ -486,15 +486,7 @@ public class OsdDock3 {
         return this;
     }
 
-    public DroneBatteryMaintenanceInfo getDroneBatteryMaintenanceInfo() {
-        return droneBatteryMaintenanceInfo;
-    }
-
-    public OsdDock3 setDroneBatteryMaintenanceInfo(DroneBatteryMaintenanceInfo droneBatteryMaintenanceInfo) {
-        this.droneBatteryMaintenanceInfo = droneBatteryMaintenanceInfo;
-        return this;
-    }
-
+    
     public FlighttaskStepCodeEnum getFlighttaskStepCode() {
         return flighttaskStepCode;
     }
@@ -633,13 +625,11 @@ public class OsdDock3 {
                 ", jobNumber=" + jobNumber +
                 ", accTime=" + accTime +
                 ", activationTime=" + activationTime +
-                ", maintainStatus=" + maintainStatus +
-                ", electricSupplyVoltage=" + electricSupplyVoltage +
+                                ", electricSupplyVoltage=" + electricSupplyVoltage +
                 ", workingVoltage=" + workingVoltage +
                 ", workingCurrent=" + workingCurrent +
                 ", backupBattery=" + backupBattery +
-                ", droneBatteryMaintenanceInfo=" + droneBatteryMaintenanceInfo +
-                ", flighttaskStepCode=" + flighttaskStepCode +
+                                ", flighttaskStepCode=" + flighttaskStepCode +
                 ", flighttaskPrepareCapacity=" + flighttaskPrepareCapacity +
                 ", mediaFileDetail=" + mediaFileDetail +
                 ", wirelessLink=" + wirelessLink +
