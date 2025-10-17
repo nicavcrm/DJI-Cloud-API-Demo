@@ -201,21 +201,25 @@ public class SDKDeviceService extends AbstractDeviceService {
                                     deviceRedisService.setDeviceOnline(drone);
                                     log.info("Marked drone {} as online in Redis with parent Dock 3 {} (wasOffline: {})", droneSn, from, wasDroneOffline);
 
-                                    // CRITICAL FIX: Trigger sub-device subscription when drone comes online via Dock 3
-                                    if (wasDroneOffline && StringUtils.hasText(drone.getWorkspaceId())) {
+                                    // CRITICAL FIX: Force sub-device subscription for Dock 3 drones regardless of previous state
+                                    // This ensures MQTT topics are subscribed to even when drone is already marked online in Redis
+                                    if (StringUtils.hasText(drone.getWorkspaceId())) {
                                         try {
                                             // Get the SDK GatewayManager for this dock
                                             GatewayManager gatewayManager = SDKManager.getDeviceSDK(from);
                                             if (gatewayManager != null) {
-                                                log.info("Dock 3 {} - triggering sub-device subscription for newly online drone: {}", from, droneSn);
+                                                log.info("Dock 3 {} - FORCING sub-device subscription for drone: {} (wasOffline: {})", from, droneSn, wasDroneOffline);
+                                                log.info("Dock 3 {} - GatewayManager found: {}, subscribing to MQTT topics for drone: {}", from, gatewayManager.getClass().getSimpleName(), droneSn);
                                                 deviceService.subDeviceOnlineSubscribeTopic(gatewayManager);
-                                                log.info("Dock 3 {} - successfully subscribed to drone topics for: {}", from, droneSn);
+                                                log.info("Dock 3 {} - successfully subscribed to drone MQTT topics for: {} - expecting messages on thing/product/{}/osd", from, droneSn, droneSn);
                                             } else {
                                                 log.warn("Dock 3 {} - GatewayManager not found, cannot subscribe to sub-device topics for drone: {}", from, droneSn);
                                             }
                                         } catch (Exception e) {
                                             log.error("Dock 3 {} - Failed to subscribe to sub-device topics for drone {}: {}", from, droneSn, e.getMessage(), e);
                                         }
+                                    } else {
+                                        log.warn("Dock 3 {} - drone {} has no workspace ID, cannot subscribe to MQTT topics", from, droneSn);
                                     }
                                 } else if (Boolean.FALSE.equals(droneOnlineStatus)) {
                                     // Drone is OFFLINE
@@ -441,22 +445,26 @@ public class SDKDeviceService extends AbstractDeviceService {
         Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(from);
         boolean wasOffline = deviceOpt.isEmpty();
 
+        // CRITICAL LOG: Track all drone OSD messages received
+        log.info("🚁 Received drone OSD message from: {} (wasOffline: {})", from, wasOffline);
+
         if (deviceOpt.isEmpty()) {
             deviceOpt = deviceService.getDeviceBySn(from);
             if (deviceOpt.isEmpty()) {
-                log.error("Drone {} not found in database. Please restart the drone.", from);
+                log.error("❌ Drone {} not found in database. Please restart the drone.", from);
                 return;
             }
         }
 
         DeviceDTO device = deviceOpt.get();
         if (!StringUtils.hasText(device.getWorkspaceId())) {
-            log.error("Drone {} is not bound to any workspace. Please bind the drone first.", from);
+            log.error("❌ Drone {} is not bound to any workspace. Please bind the drone first.", from);
         }
 
         // Enhanced logging for drone OSD processing
-        log.debug("Processing OSD for drone: {} - Domain: {}, Type: {}, WorkspaceId: {}, wasOffline: {}",
-            from, device.getDomain(), device.getType(), device.getWorkspaceId(), wasOffline);
+        log.info("🚁 Processing OSD for drone: {} - Parent: {}, Domain: {}, Type: {}, WorkspaceId: {}, Mode: {}, Alt: {}",
+            from, device.getParentSn(), device.getDomain(), device.getType(), device.getWorkspaceId(),
+            request.getData().getModeCode(), request.getData().getHeight());
 
         // Ensure device is marked as online when OSD messages are received
         device.setStatus(true);
@@ -466,7 +474,12 @@ public class SDKDeviceService extends AbstractDeviceService {
         // Always send DEVICE_OSD WebSocket event for real-time monitoring
         if (StringUtils.hasText(device.getWorkspaceId())) {
             deviceService.pushOsdDataToWeb(device.getWorkspaceId(), BizCodeEnum.DEVICE_OSD, from, request.getData());
-            log.debug("Sent DEVICE_OSD WebSocket event for drone: {}", from);
+            log.info("✅ SENT DEVICE_OSD WebSocket event for drone: {} (Parent: {}, Mode: {}, Alt: {})",
+                from, device.getParentSn(),
+                request.getData().getModeCode(),
+                request.getData().getHeight());
+        } else {
+            log.warn("❌ Cannot send DEVICE_OSD WebSocket event for drone: {} - no workspace ID configured", from);
         }
 
         // If this is a drone from Dock 3 that was previously offline, ensure proper online event handling

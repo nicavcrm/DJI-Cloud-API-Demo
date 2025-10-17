@@ -1,9 +1,9 @@
 package com.dji.sdk.config.version;
 
+import java.util.Arrays;
+
 import com.dji.sdk.exception.CloudSDKVersionException;
 import com.fasterxml.jackson.annotation.JsonValue;
-
-import java.util.Arrays;
 
 /**
  * @author sean
@@ -20,6 +20,7 @@ public enum DockThingVersionEnum implements IThingVersion {
 
     V1_1_3("1.1.3", CloudSDKVersionEnum.V1_0_2),
 
+    V1_2_3("1.2.3", CloudSDKVersionEnum.V1_0_3),
     ;
 
     private final String thingVersion;

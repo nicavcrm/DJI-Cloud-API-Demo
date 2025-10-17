@@ -53,7 +53,17 @@ public enum DroneModeCodeEnum {
 
     DOCK_SITE_EVALUATION(19),
 
-    POI(20),
+    /**
+     * POI环绕 - POI Surround flight mode
+     * The drone circles around a point of interest
+     */
+    POI_SURROUND(20),
+
+    /**
+     * 进离场航线飞行过程中 - Enter/Exit Route Flight Process
+     * The drone is in the process of entering or exiting a flight route
+     */
+    ENTER_EXIT_ROUTE_FLIGHT(21),
 
     ;
 

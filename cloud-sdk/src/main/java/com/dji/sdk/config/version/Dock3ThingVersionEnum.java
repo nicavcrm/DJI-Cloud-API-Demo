@@ -18,6 +18,12 @@ public enum Dock3ThingVersionEnum implements IThingVersion {
 
     V1_2_3("1.2.3", CloudSDKVersionEnum.V1_0_3),
 
+    V1_3_0("1.3.0", CloudSDKVersionEnum.V1_0_3),
+
+    V1_3_1("1.3.1", CloudSDKVersionEnum.V1_0_3),
+
+    V1_4_1("1.4.1", CloudSDKVersionEnum.V1_0_3),
+
     ;
 
     private final String thingVersion;
