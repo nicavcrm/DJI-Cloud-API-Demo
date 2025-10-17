@@ -266,6 +266,72 @@ public class SDKDeviceService extends AbstractDeviceService {
     @Override
     public void osdDockDrone(TopicOsdRequest<OsdDockDrone> request, MessageHeaders headers) {
         String from = request.getFrom();
+
+        // Check if this drone might belong to a Dock 3 by checking its parent
+        Optional<DeviceDTO> deviceOpt = deviceService.getDeviceBySn(from);
+        boolean isPotentialDock3Drone = false;
+
+        if (deviceOpt.isPresent() && StringUtils.hasText(deviceOpt.get().getParentSn())) {
+            Optional<DeviceDTO> parentOpt = deviceService.getDeviceBySn(deviceOpt.get().getParentSn());
+            isPotentialDock3Drone = parentOpt.isPresent() &&
+                                   DeviceDomainEnum.DOCK == parentOpt.get().getDomain() &&
+                                   DeviceTypeEnum.DOCK3 == parentOpt.get().getType();
+        }
+
+        // If this drone might belong to a Dock 3, try to handle snake_case format
+        if (isPotentialDock3Drone) {
+            log.debug("Potential Dock 3 drone detected: {}, attempting special JSON handling", from);
+            try {
+                // Get the raw payload as string to check the format
+                String rawPayload = objectMapper.writeValueAsString(request.getData());
+                log.debug("Raw payload for potential Dock 3 drone {}: {}", from, rawPayload);
+
+                // Check if this is snake_case format (Dock 3)
+                boolean isSnakeCaseFormat = rawPayload.contains("\"position_state\"") ||
+                                          rawPayload.contains("\"total_flight_distance\"") ||
+                                          rawPayload.contains("\"horizontal_speed\"") ||
+                                          rawPayload.contains("\"vertical_speed\"") ||
+                                          rawPayload.contains("\"payload_bindings\"") ||
+                                          rawPayload.contains("\"mode_code\"");
+
+                if (isSnakeCaseFormat) {
+                    log.info("Detected Dock 3 snake_case format for drone: {}, performing custom deserialization", from);
+
+                    // Parse the raw JSON using Dock 3 specific class
+                    OsdDockDrone3 dock3DroneOsd = objectMapper.readValue(rawPayload, OsdDockDrone3.class);
+                    OsdDockDrone standardDrone = dock3DroneOsd.toStandardOsdDockDrone();
+
+                    log.debug("Successfully converted Dock 3 drone OSD to standard format for: {}", from);
+                    log.debug("Converted data: attitudeHead={}, positionState={}, modeCode={}",
+                        standardDrone.getAttitudeHead(), standardDrone.getPositionState(), standardDrone.getModeCode());
+
+                    // Create a new request with the properly deserialized data
+                    TopicOsdRequest<OsdDockDrone> correctedRequest = new TopicOsdRequest<OsdDockDrone>()
+                            .setGateway(request.getGateway())
+                            .setFrom(request.getFrom())
+                            .setData(standardDrone)
+                            .setBid(request.getBid())
+                            .setTid(request.getTid())
+                            .setTimestamp(request.getTimestamp());
+
+                    // Process the corrected request
+                    processDroneOsd(correctedRequest, headers);
+                    return;
+                }
+            } catch (Exception e) {
+                log.warn("Failed to process as Dock 3 drone format for device {}, falling back to standard processing: {}", from, e.getMessage());
+            }
+        }
+
+        // Standard processing for non-Dock 3 drones or if Dock 3 processing failed
+        processDroneOsd(request, headers);
+    }
+
+    /**
+     * Core OSD processing logic for all drone types
+     */
+    private void processDroneOsd(TopicOsdRequest<OsdDockDrone> request, MessageHeaders headers) {
+        String from = request.getFrom();
         Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(from);
         boolean wasOffline = deviceOpt.isEmpty();
 
