@@ -176,47 +176,70 @@ public class SDKDeviceService extends AbstractDeviceService {
                         String droneSn = dock3Osd.getSubDevice().getDeviceSn();
                         Boolean droneOnlineStatus = dock3Osd.getSubDevice().getDeviceOnlineStatus();
 
-                        if (StringUtils.hasText(droneSn) && Boolean.TRUE.equals(droneOnlineStatus)) {
-                            log.info("Dock 3 {} reports drone {} is online via sub_device data", from, droneSn);
-
-                            // Mark the drone as online in our system
+                        // CRITICAL FIX: Handle both online AND offline status for Dock 3 drones
+                        if (StringUtils.hasText(droneSn)) {
                             Optional<DeviceDTO> droneOpt = deviceService.getDeviceBySn(droneSn);
                             if (droneOpt.isPresent()) {
                                 DeviceDTO drone = droneOpt.get();
 
-                                // Check if drone was previously offline to trigger subscription
+                                // Check if drone was previously offline to trigger subscription/unsubscription
                                 Optional<DeviceDTO> existingDroneOpt = deviceRedisService.getDeviceOnline(droneSn);
                                 boolean wasDroneOffline = existingDroneOpt.isEmpty();
 
-                                drone.setStatus(true);
-                                drone.setParentSn(from);
+                                if (Boolean.TRUE.equals(droneOnlineStatus)) {
+                                    // Drone is ONLINE
+                                    log.info("Dock 3 {} reports drone {} is online via sub_device data", from, droneSn);
 
-                                // Ensure drone has workspace ID from parent dock
-                                if (!StringUtils.hasText(drone.getWorkspaceId()) && StringUtils.hasText(deviceOpt.get().getWorkspaceId())) {
-                                    drone.setWorkspaceId(deviceOpt.get().getWorkspaceId());
-                                }
+                                    drone.setStatus(true);
+                                    drone.setParentSn(from);
 
-                                deviceRedisService.setDeviceOnline(drone);
-                                log.info("Marked drone {} as online in Redis with parent Dock 3 {} (wasOffline: {})", droneSn, from, wasDroneOffline);
+                                    // Ensure drone has workspace ID from parent dock
+                                    if (!StringUtils.hasText(drone.getWorkspaceId()) && StringUtils.hasText(deviceOpt.get().getWorkspaceId())) {
+                                        drone.setWorkspaceId(deviceOpt.get().getWorkspaceId());
+                                    }
 
-                                // CRITICAL FIX: Trigger sub-device subscription when drone comes online via Dock 3
-                                if (wasDroneOffline && StringUtils.hasText(drone.getWorkspaceId())) {
-                                    try {
-                                        // Get the SDK GatewayManager for this dock
-                                        GatewayManager gatewayManager = SDKManager.getDeviceSDK(from);
-                                        if (gatewayManager != null) {
-                                            log.info("Dock 3 {} - triggering sub-device subscription for newly online drone: {}", from, droneSn);
-                                            deviceService.subDeviceOnlineSubscribeTopic(gatewayManager);
-                                            log.info("Dock 3 {} - successfully subscribed to drone topics for: {}", from, droneSn);
-                                        } else {
-                                            log.warn("Dock 3 {} - GatewayManager not found, cannot subscribe to sub-device topics for drone: {}", from, droneSn);
+                                    deviceRedisService.setDeviceOnline(drone);
+                                    log.info("Marked drone {} as online in Redis with parent Dock 3 {} (wasOffline: {})", droneSn, from, wasDroneOffline);
+
+                                    // CRITICAL FIX: Trigger sub-device subscription when drone comes online via Dock 3
+                                    if (wasDroneOffline && StringUtils.hasText(drone.getWorkspaceId())) {
+                                        try {
+                                            // Get the SDK GatewayManager for this dock
+                                            GatewayManager gatewayManager = SDKManager.getDeviceSDK(from);
+                                            if (gatewayManager != null) {
+                                                log.info("Dock 3 {} - triggering sub-device subscription for newly online drone: {}", from, droneSn);
+                                                deviceService.subDeviceOnlineSubscribeTopic(gatewayManager);
+                                                log.info("Dock 3 {} - successfully subscribed to drone topics for: {}", from, droneSn);
+                                            } else {
+                                                log.warn("Dock 3 {} - GatewayManager not found, cannot subscribe to sub-device topics for drone: {}", from, droneSn);
+                                            }
+                                        } catch (Exception e) {
+                                            log.error("Dock 3 {} - Failed to subscribe to sub-device topics for drone {}: {}", from, droneSn, e.getMessage(), e);
                                         }
-                                    } catch (Exception e) {
-                                        log.error("Dock 3 {} - Failed to subscribe to sub-device topics for drone {}: {}", from, droneSn, e.getMessage(), e);
+                                    }
+                                } else if (Boolean.FALSE.equals(droneOnlineStatus)) {
+                                    // Drone is OFFLINE
+                                    log.info("Dock 3 {} reports drone {} is offline via sub_device data", from, droneSn);
+
+                                    // Only process offline if drone was previously online
+                                    if (!wasDroneOffline) {
+                                        drone.setStatus(false);
+                                        deviceRedisService.setDeviceOnline(drone);
+
+                                        // Unsubscribe from drone topics to match Dock 1/2 behavior
+                                        try {
+                                            log.info("Dock 3 {} - marking drone {} as offline and unsubscribing from topics", from, droneSn);
+                                            deviceService.subDeviceOffline(droneSn);
+                                            log.info("Dock 3 {} - successfully unsubscribed from drone topics for: {}", from, droneSn);
+                                        } catch (Exception e) {
+                                            log.error("Dock 3 {} - Failed to unsubscribe from sub-device topics for drone {}: {}", from, droneSn, e.getMessage(), e);
+                                        }
+                                    } else {
+                                        log.debug("Dock 3 {} - drone {} was already offline, no action needed", from, droneSn);
                                     }
                                 }
                             } else {
-                                log.warn("Drone {} not found in database, cannot mark as online", droneSn);
+                                log.warn("Drone {} not found in database, cannot process status change", droneSn);
                             }
                         }
                     }
