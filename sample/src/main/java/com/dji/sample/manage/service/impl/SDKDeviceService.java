@@ -171,6 +171,34 @@ public class SDKDeviceService extends AbstractDeviceService {
                     log.debug("Converted data: networkState={}, droneInDock={}, temperature={}",
                         standardDock.getNetworkState(), standardDock.getDroneInDock(), standardDock.getTemperature());
 
+                    // CRITICAL FIX: Handle Dock 3 sub-device online status from sub_device field
+                    if (dock3Osd.getSubDevice() != null) {
+                        String droneSn = dock3Osd.getSubDevice().getDeviceSn();
+                        Boolean droneOnlineStatus = dock3Osd.getSubDevice().getDeviceOnlineStatus();
+
+                        if (StringUtils.hasText(droneSn) && Boolean.TRUE.equals(droneOnlineStatus)) {
+                            log.info("Dock 3 {} reports drone {} is online via sub_device data", from, droneSn);
+
+                            // Mark the drone as online in our system
+                            Optional<DeviceDTO> droneOpt = deviceService.getDeviceBySn(droneSn);
+                            if (droneOpt.isPresent()) {
+                                DeviceDTO drone = droneOpt.get();
+                                drone.setStatus(true);
+                                drone.setParentSn(from);
+
+                                // Ensure drone has workspace ID from parent dock
+                                if (!StringUtils.hasText(drone.getWorkspaceId()) && StringUtils.hasText(deviceOpt.get().getWorkspaceId())) {
+                                    drone.setWorkspaceId(deviceOpt.get().getWorkspaceId());
+                                }
+
+                                deviceRedisService.setDeviceOnline(drone);
+                                log.info("Marked drone {} as online in Redis with parent Dock 3 {}", droneSn, from);
+                            } else {
+                                log.warn("Drone {} not found in database, cannot mark as online", droneSn);
+                            }
+                        }
+                    }
+
                     // Create a new request with the properly deserialized data
                     TopicOsdRequest<OsdDock> correctedRequest = new TopicOsdRequest<OsdDock>()
                             .setGateway(request.getGateway())
@@ -218,6 +246,23 @@ public class SDKDeviceService extends AbstractDeviceService {
         log.debug("Processing OSD for dock: {} - Domain: {}, Type: {}, SubType: {}, WorkspaceId: {}, ChildDeviceSn: {}",
             from, device.getDomain(), device.getType(), device.getSubType(), device.getWorkspaceId(), device.getChildDeviceSn());
 
+        // CRITICAL FIX: For Dock 3, ensure child device SN is synchronized from database
+        // because Redis might not have the latest child_device_sn information
+        boolean isDock3 = DeviceDomainEnum.DOCK == device.getDomain() &&
+                         DeviceTypeEnum.DOCK3 == device.getType();
+
+        if (isDock3 && !StringUtils.hasText(device.getChildDeviceSn())) {
+            log.info("Dock 3 {} has no child device SN in Redis, syncing from database", from);
+            Optional<DeviceDTO> freshDeviceOpt = deviceService.getDeviceBySn(from);
+            if (freshDeviceOpt.isPresent() && StringUtils.hasText(freshDeviceOpt.get().getChildDeviceSn())) {
+                device.setChildDeviceSn(freshDeviceOpt.get().getChildDeviceSn());
+                deviceRedisService.setDeviceOnline(device); // Update Redis with synced data
+                log.info("Dock 3 {} - synced child device SN from database: {}", from, device.getChildDeviceSn());
+            } else {
+                log.warn("Dock 3 {} - no child device SN found in database either", from);
+            }
+        }
+
         if (!StringUtils.hasText(device.getWorkspaceId())) {
             log.error("Dock {} is not bound to any workspace. Please bind the dock first.", from);
         }
@@ -258,12 +303,15 @@ public class SDKDeviceService extends AbstractDeviceService {
                         if (gatewayManager != null) {
                             log.info("Dock 3 {} - triggering sub-device subscription for child: {}", from, device.getChildDeviceSn());
                             deviceService.subDeviceOnlineSubscribeTopic(gatewayManager);
+                            log.info("Dock 3 {} - successfully subscribed to drone topics for: {}", from, device.getChildDeviceSn());
                         } else {
                             log.warn("Dock 3 {} - GatewayManager not found, cannot subscribe to sub-device topics", from);
                         }
                     } catch (Exception e) {
                         log.error("Dock 3 {} - Failed to subscribe to sub-device topics: {}", from, e.getMessage(), e);
                     }
+                } else {
+                    log.warn("Dock 3 {} - no child device SN available for subscription, childDeviceSn: {}", from, device.getChildDeviceSn());
                 }
             }
 
