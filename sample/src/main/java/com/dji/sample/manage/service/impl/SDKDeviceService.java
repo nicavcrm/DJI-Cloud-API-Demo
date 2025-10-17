@@ -248,6 +248,23 @@ public class SDKDeviceService extends AbstractDeviceService {
 
             if (isDock3) {
                 log.info("Successfully processed Dock 3 OSD data for device: {}", from);
+
+                // CRITICAL FIX: Dock 3 comes online via OSD, not via updateTopoOnline
+                // We need to ensure sub-device subscription happens for Dock 3 as well
+                if (StringUtils.hasText(device.getChildDeviceSn())) {
+                    try {
+                        // Get the SDK GatewayManager for this dock
+                        GatewayManager gatewayManager = SDKManager.getDeviceSDK(from);
+                        if (gatewayManager != null) {
+                            log.info("Dock 3 {} - triggering sub-device subscription for child: {}", from, device.getChildDeviceSn());
+                            deviceService.subDeviceOnlineSubscribeTopic(gatewayManager);
+                        } else {
+                            log.warn("Dock 3 {} - GatewayManager not found, cannot subscribe to sub-device topics", from);
+                        }
+                    } catch (Exception e) {
+                        log.error("Dock 3 {} - Failed to subscribe to sub-device topics: {}", from, e.getMessage(), e);
+                    }
+                }
             }
 
             // Fire the DEVICE_ONLINE WebSocket event
@@ -287,12 +304,12 @@ public class SDKDeviceService extends AbstractDeviceService {
                 log.debug("Raw payload for potential Dock 3 drone {}: {}", from, rawPayload);
 
                 // Check if this is snake_case format (Dock 3)
-                boolean isSnakeCaseFormat = rawPayload.contains("\"position_state\"") ||
-                                          rawPayload.contains("\"total_flight_distance\"") ||
-                                          rawPayload.contains("\"horizontal_speed\"") ||
-                                          rawPayload.contains("\"vertical_speed\"") ||
-                                          rawPayload.contains("\"payload_bindings\"") ||
-                                          rawPayload.contains("\"mode_code\"");
+                // Look for actual snake_case patterns that Dock 3 sends
+                boolean isSnakeCaseFormat = rawPayload.contains("\"position_state\"") &&
+                                          rawPayload.contains("\"total_flight_distance\"") &&
+                                          rawPayload.contains("\"horizontal_speed\"") &&
+                                          rawPayload.contains("\"vertical_speed\"") &&
+                                          (rawPayload.contains("\"payload_bindings\"") || rawPayload.contains("\"elevation\""));
 
                 if (isSnakeCaseFormat) {
                     log.info("Detected Dock 3 snake_case format for drone: {}, performing custom deserialization", from);
