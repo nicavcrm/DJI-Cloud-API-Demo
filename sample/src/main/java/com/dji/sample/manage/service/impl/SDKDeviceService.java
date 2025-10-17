@@ -287,10 +287,6 @@ public class SDKDeviceService extends AbstractDeviceService {
             log.info("Dock {} (Domain: {}, Type: {}) came online via OSD, firing DEVICE_ONLINE event",
                 from, device.getDomain(), device.getType());
 
-            // Check if this is a Dock 3 device for special handling
-            boolean isDock3 = DeviceDomainEnum.DOCK == device.getDomain() &&
-                             DeviceTypeEnum.DOCK3 == device.getType();
-
             if (isDock3) {
                 log.info("Successfully processed Dock 3 OSD data for device: {}", from);
 
