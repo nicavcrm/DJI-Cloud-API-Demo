@@ -84,7 +84,7 @@ public class StatusRouter {
         String method = request.getMethod();
 
         // Check if this is a gateway device (remote controller or dock)
-        boolean isGatewayDevice = DeviceDomainEnum.GATEWAY == domain;
+        boolean isGatewayDevice = DeviceDomainEnum.REMOTER_CONTROL == domain || DeviceDomainEnum.DOCK == domain;
 
         if (isGatewayDevice && subDevices != null && !subDevices.isEmpty()) {
             // Enhanced detection for gateway device offline events
@@ -97,16 +97,21 @@ public class StatusRouter {
                 // For update_topo messages from gateway devices with sub-devices,
                 // we need additional context to determine if this is online or offline
 
-                // Strategy: Check if sub-devices indicate offline status
-                // Some gateway devices might report sub-device status in the topology data
+                // Strategy: Check if this topology update represents a gateway shutdown scenario
+                // Gateway devices going offline may still report sub-devices in their final update
 
-                boolean anySubDeviceOnline = subDevices.stream()
-                    .anyMatch(subDevice -> subDevice.getDomain() != null && subDevice.getDomain() != DeviceDomainEnum.SUB_DEVICE);
+                // For remote controllers and docks, if they're going offline, the sub-devices
+                // reported might be in a disconnected state or the pattern might be different
 
-                // If gateway has sub-devices but they're not sub-device domain, might indicate offline scenario
-                if (!anySubDeviceOnline && subDevices.size() > 0) {
+                // Check if any sub-device is a drone - if so, this might be a normal online state
+                boolean hasDroneSubDevice = subDevices.stream()
+                    .anyMatch(subDevice -> subDevice.getDomain() != null && subDevice.getDomain() == DeviceDomainEnum.DRONE);
+
+                // If this is a gateway device reporting sub-devices but no drones are connected,
+                // it might indicate a shutdown or offline scenario
+                if (!hasDroneSubDevice && subDevices.size() > 0) {
                     // This could be a gateway going offline - route to offline for processing
-                    // The offline handler will determine the actual status
+                    // The offline handler will determine the actual status based on device state
                     return true;
                 }
             }
