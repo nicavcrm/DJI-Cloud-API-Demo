@@ -980,6 +980,45 @@ public class SDKDeviceService extends AbstractDeviceService {
     }
 
     @Override
+    public TopicStateResponse<MqttReply> dongleInfos(TopicStateRequest<DongleInfos> request, MessageHeaders headers) {
+        log.info("Received dongle infos update from {} with {} dongles",
+            request.getFrom(), request.getData().getDongleInfos() != null ? request.getData().getDongleInfos().size() : 0);
+
+        // Get the device information
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getFrom());
+        if (deviceOpt.isEmpty()) {
+            log.warn("Device {} not found online for dongle infos update", request.getFrom());
+            return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
+        }
+
+        DeviceDTO device = deviceOpt.get();
+        if (!StringUtils.hasText(device.getWorkspaceId())) {
+            log.warn("Device {} has no workspace ID for dongle infos update", request.getFrom());
+            return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
+        }
+
+        // Process dongle infos update
+        if (request.getData().getDongleInfos() != null && !request.getData().getDongleInfos().isEmpty()) {
+            request.getData().getDongleInfos().forEach(dongle -> {
+                log.info("Device {} dongle info - IMEI: {}, Type: {}, eSIM State: {}, SIM State: {}, SIM Slot: {}",
+                    request.getFrom(),
+                    dongle.getImei(),
+                    dongle.getDongleType(),
+                    dongle.getEsimActivateState(),
+                    dongle.getSimCardState(),
+                    dongle.getSimSlot()
+                );
+            });
+            // You can add custom logic here to handle dongle information changes
+            // For example, store dongle connectivity status or trigger network alerts
+        } else {
+            log.info("Device {} has no dongles connected", request.getFrom());
+        }
+
+        return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
+    }
+
+    @Override
     public void rcLiveStatusUpdate(TopicStateRequest<RcLiveStatus> request, MessageHeaders headers) {
         log.debug("Received RC live status update from {} with data: {}", request.getFrom(), request.getData());
 
