@@ -12,6 +12,7 @@ import com.dji.sample.manage.service.IDeviceRedisService;
 import com.dji.sample.manage.service.IDeviceService;
 import com.dji.sdk.cloudapi.device.*;
 import com.dji.sdk.cloudapi.device.api.AbstractDeviceService;
+import com.dji.sdk.cloudapi.property.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dji.sdk.cloudapi.tsa.DeviceIconUrl;
 import com.dji.sdk.cloudapi.tsa.IconUrlEnum;
