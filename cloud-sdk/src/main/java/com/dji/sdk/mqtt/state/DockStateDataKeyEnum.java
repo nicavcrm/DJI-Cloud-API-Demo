@@ -50,6 +50,26 @@ public enum DockStateDataKeyEnum {
 
     SILENT_MODE(Set.of("silent_mode"), DockSilentMode.class),
 
+    UOM_REAL_NAME_STATE(Set.of("uom_real_name_state"), UomRealNameState.class),
+
+    AI_SPOTLIGHT_ZOOM_ON(Set.of("ai_spotlight_zoom_on"), AiSpotlightZoomOn.class),
+
+    AI_SPOTLIGHT_ZOOM_STATE(Set.of("ai_spotlight_zoom_state"), AiSpotlightZoomState.class),
+
+    AI_IDENTIFY_ON(Set.of("ai_identify_on"), AiIdentifyOn.class),
+
+    FLYSAFE_DATABASE_VERSION(Set.of("flysafe_database_version"), FlysafeDatabaseVersion.class),
+
+    WIRELESS_LINK_TOPO(Set.of("wireless_link_topo"), WirelessLinkTopo.class),
+
+    COMMANDER_FLIGHT_MODE(Set.of("commander_flight_mode"), CommanderFlightMode.class),
+
+    PSDK_UI_RESOURCE(Set.of("psdk_ui_resource"), PsdkUiResource.class),
+
+    PSDK_WIDGET_VALUES(Set.of("psdk_widget_values"), PsdkWidgetValues.class),
+
+    GEO_CAGING_STATUS(Set.of("geo_caging_status"), GeoCagingStatus.class),
+
     ;
 
     private final Set<String> keys;

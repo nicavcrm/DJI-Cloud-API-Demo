@@ -76,6 +76,10 @@ public enum DeviceTypeEnum {
 
     M4D(100),
 
+    M4D_CAMERA(98),
+
+    M4TD_CAMERA(99),
+
     RC_PRO_TWO(174),
 
     H30(82),
@@ -85,10 +89,6 @@ public enum DeviceTypeEnum {
     M4E_CAMERA(88),
 
     M4T_CAMERA(89),
-
-    M4D_CAMERA(98),
-
-    M4TD_CAMERA(99),
 
     VISION_ASSIST(176),
     ;

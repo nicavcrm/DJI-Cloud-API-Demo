@@ -1,5 +1,6 @@
 package com.dji.sdk.cloudapi.device;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
 /**
@@ -14,6 +15,7 @@ public class PsdkWidgetValues {
     /**
      * Widget values as key-value pairs
      */
+    @JsonProperty("psdk_widget_values")
     private Map<String, Object> values;
 
     public PsdkWidgetValues() {

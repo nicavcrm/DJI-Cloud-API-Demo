@@ -838,27 +838,159 @@ public class SDKDeviceService extends AbstractDeviceService {
     }
 
     @Override
+    public void dockWpmzVersionUpdate(TopicStateRequest<DockDroneWpmzVersion> request, MessageHeaders headers) {
+        log.info("Received WPMZ version update from {} with version: {}",
+            request.getFrom(), request.getData().getWpmzVersion());
+
+        // Get the device information
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getFrom());
+        if (deviceOpt.isEmpty()) {
+            log.warn("Device {} not found online for WPMZ version update", request.getFrom());
+            return;
+        }
+
+        DeviceDTO device = deviceOpt.get();
+        if (!StringUtils.hasText(device.getWorkspaceId())) {
+            log.warn("Device {} has no workspace ID for WPMZ version update", request.getFrom());
+            return;
+        }
+
+        // Process WPMZ version update - store version information if needed
+        // For now, just log the version information
+        String wpmzVersion = request.getData().getWpmzVersion();
+        if (StringUtils.hasText(wpmzVersion)) {
+            log.info("Device {} WPMZ version updated to: {}", request.getFrom(), wpmzVersion);
+            // You can add custom logic here to store or process the WPMZ version
+            // For example, store it in Redis or update device metadata
+        } else {
+            log.warn("Device {} sent empty WPMZ version", request.getFrom());
+        }
+    }
+
+    @Override
+    public void dockDroneModeCodeReason(TopicStateRequest<DockDroneModeCodeReason> request, MessageHeaders headers) {
+        log.info("Received mode code reason update from {} with reason: {}",
+            request.getFrom(), request.getData().getModeCodeReason());
+
+        // Get the device information
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getFrom());
+        if (deviceOpt.isEmpty()) {
+            log.warn("Device {} not found online for mode code reason update", request.getFrom());
+            return;
+        }
+
+        DeviceDTO device = deviceOpt.get();
+        if (!StringUtils.hasText(device.getWorkspaceId())) {
+            log.warn("Device {} has no workspace ID for mode code reason update", request.getFrom());
+            return;
+        }
+
+        // Process mode code reason update
+        if (request.getData().getModeCodeReason() != null) {
+            log.info("Device {} mode code reason updated to: {}", request.getFrom(), request.getData().getModeCodeReason());
+            // You can add custom logic here to handle mode code reason changes
+        }
+    }
+
+    @Override
+    public void dockDroneRthMode(TopicStateRequest<DockDroneRthMode> request, MessageHeaders headers) {
+        log.info("Received RTH mode update from {} with mode: {}",
+            request.getFrom(), request.getData().getRthMode());
+
+        // Get the device information
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getFrom());
+        if (deviceOpt.isEmpty()) {
+            log.warn("Device {} not found online for RTH mode update", request.getFrom());
+            return;
+        }
+
+        DeviceDTO device = deviceOpt.get();
+        if (!StringUtils.hasText(device.getWorkspaceId())) {
+            log.warn("Device {} has no workspace ID for RTH mode update", request.getFrom());
+            return;
+        }
+
+        // Process RTH mode update
+        if (request.getData().getRthMode() != null) {
+            log.info("Device {} RTH mode updated to: {}", request.getFrom(), request.getData().getRthMode());
+            // You can add custom logic here to handle RTH mode changes
+        }
+    }
+
+    @Override
+    public void dockDroneCommanderFlightHeight(TopicStateRequest<DockDroneCommanderFlightHeight> request, MessageHeaders headers) {
+        log.info("Received commander flight height update from {} with height: {}",
+            request.getFrom(), request.getData().getCommanderFlightHeight());
+
+        // Get the device information
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getFrom());
+        if (deviceOpt.isEmpty()) {
+            log.warn("Device {} not found online for commander flight height update", request.getFrom());
+            return;
+        }
+
+        DeviceDTO device = deviceOpt.get();
+        if (!StringUtils.hasText(device.getWorkspaceId())) {
+            log.warn("Device {} has no workspace ID for commander flight height update", request.getFrom());
+            return;
+        }
+
+        // Process commander flight height update
+        if (request.getData().getCommanderFlightHeight() != null) {
+            log.info("Device {} commander flight height updated to: {} meters",
+                request.getFrom(), request.getData().getCommanderFlightHeight());
+            // You can add custom logic here to handle flight height changes
+        }
+    }
+
+    @Override
+    public void dockDroneCommanderModeLostAction(TopicStateRequest<DockDroneCommanderModeLostAction> request, MessageHeaders headers) {
+        log.info("Received commander mode lost action update from {} with action: {}",
+            request.getFrom(), request.getData().getCommanderModeLostAction());
+
+        // Get the device information
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getFrom());
+        if (deviceOpt.isEmpty()) {
+            log.warn("Device {} not found online for commander mode lost action update", request.getFrom());
+            return;
+        }
+
+        DeviceDTO device = deviceOpt.get();
+        if (!StringUtils.hasText(device.getWorkspaceId())) {
+            log.warn("Device {} has no workspace ID for commander mode lost action update", request.getFrom());
+            return;
+        }
+
+        // Process commander mode lost action update
+        if (request.getData().getCommanderModeLostAction() != null) {
+            log.info("Device {} commander mode lost action updated to: {}",
+                request.getFrom(), request.getData().getCommanderModeLostAction());
+            // You can add custom logic here to handle commander mode lost action changes
+        }
+    }
+
+    @Override
     public void rcLiveStatusUpdate(TopicStateRequest<RcLiveStatus> request, MessageHeaders headers) {
         log.debug("Received RC live status update from {} with data: {}", request.getFrom(), request.getData());
-        
+
         // Get the device information
         Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getFrom());
         if (deviceOpt.isEmpty()) {
             log.warn("Device {} not found online for live status update", request.getFrom());
             return;
         }
-        
+
         DeviceDTO device = deviceOpt.get();
         if (!StringUtils.hasText(device.getWorkspaceId())) {
             log.warn("Device {} has no workspace ID for live status update", request.getFrom());
             return;
         }
-        
+
         // Process live status update - you can add custom logic here
         // For now, just log the status
         if (request.getData() != null && request.getData().getLiveStatus() != null) {
-            request.getData().getLiveStatus().forEach(status -> 
-                log.info("RC {} live status - Video ID: {}, Status: {}, Quality: {}", 
+            request.getData().getLiveStatus().forEach(status ->
+                log.info("RC {} live status - Video ID: {}, Status: {}, Quality: {}",
                     request.getFrom(), status.getVideoId(), status.getStatus(), status.getVideoQuality())
             );
         }

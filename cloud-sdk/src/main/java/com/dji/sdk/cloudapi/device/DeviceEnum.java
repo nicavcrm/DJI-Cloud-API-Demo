@@ -90,6 +90,10 @@ public enum DeviceEnum {
 
     M4TD(DeviceDomainEnum.DRONE, DeviceTypeEnum.M4D, DeviceSubTypeEnum.ONE),
 
+    M4D_CAMERA (DeviceDomainEnum.PAYLOAD, DeviceTypeEnum.M4D_CAMERA, DeviceSubTypeEnum.ZERO),
+
+    M4TD_CAMERA(DeviceDomainEnum.PAYLOAD, DeviceTypeEnum.M4TD_CAMERA, DeviceSubTypeEnum.ZERO),
+
     RC_PRO_TWO(DeviceDomainEnum.REMOTER_CONTROL, DeviceTypeEnum.RC_PRO_TWO, DeviceSubTypeEnum.ZERO),
 
     H30(DeviceDomainEnum.PAYLOAD, DeviceTypeEnum.H30, DeviceSubTypeEnum.ZERO),
@@ -99,10 +103,6 @@ public enum DeviceEnum {
     M4E_CAMERA(DeviceDomainEnum.PAYLOAD, DeviceTypeEnum.M4E_CAMERA, DeviceSubTypeEnum.ZERO),
 
     M4T_CAMERA(DeviceDomainEnum.PAYLOAD, DeviceTypeEnum.M4T_CAMERA, DeviceSubTypeEnum.ZERO),
-
-    M4D_CAMERA(DeviceDomainEnum.PAYLOAD, DeviceTypeEnum.M4D_CAMERA, DeviceSubTypeEnum.ZERO),
-
-    M4TD_CAMERA(DeviceDomainEnum.PAYLOAD, DeviceTypeEnum.M4TD_CAMERA, DeviceSubTypeEnum.ZERO),
 
     M3D_VISION_ASSIST(DeviceDomainEnum.PAYLOAD, DeviceTypeEnum.VISION_ASSIST, DeviceSubTypeEnum.ZERO),
 
