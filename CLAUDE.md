@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the DJI Cloud API Demo project (v1.10.0) - a Spring Boot application that demonstrates integration with DJI's cloud platform for drone fleet management. Note: The project has a deprecation notice as of April 10, 2025, but continues to serve as a reference implementation.
+This is the DJI Cloud API Demo project (v1.10.1) - a Spring Boot application that demonstrates integration with DJI's cloud platform for drone fleet management. Note: The project has a deprecation notice as of April 10, 2025, but continues to serve as a reference implementation.
 
 ## Essential Commands
 
@@ -27,7 +27,7 @@ mvn clean install -pl sample
 mvn spring-boot:run -pl sample
 
 # Run from JAR
-java -jar sample/target/sample-1.10.0.jar
+java -jar sample/target/sample-1.10.1.jar
 
 # Debug mode (port 5005)
 mvn spring-boot:run -pl sample -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"
