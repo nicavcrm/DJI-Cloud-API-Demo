@@ -21,6 +21,7 @@ import com.dji.sdk.common.SDKManager;
 import com.dji.sdk.mqtt.MqttReply;
 import com.dji.sdk.mqtt.osd.TopicOsdRequest;
 import com.dji.sdk.mqtt.state.TopicStateRequest;
+import com.dji.sdk.mqtt.state.TopicStateResponse;
 import com.dji.sdk.mqtt.status.TopicStatusRequest;
 import com.dji.sdk.mqtt.status.TopicStatusResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -869,7 +870,7 @@ public class SDKDeviceService extends AbstractDeviceService {
     }
 
     @Override
-    public void dockDroneModeCodeReason(TopicStateRequest<DockDroneModeCodeReason> request, MessageHeaders headers) {
+    public TopicStateResponse<MqttReply> dockDroneModeCodeReason(TopicStateRequest<DockDroneModeCodeReason> request, MessageHeaders headers) {
         log.info("Received mode code reason update from {} with reason: {}",
             request.getFrom(), request.getData().getModeCodeReason());
 
@@ -877,13 +878,13 @@ public class SDKDeviceService extends AbstractDeviceService {
         Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getFrom());
         if (deviceOpt.isEmpty()) {
             log.warn("Device {} not found online for mode code reason update", request.getFrom());
-            return;
+            return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
         }
 
         DeviceDTO device = deviceOpt.get();
         if (!StringUtils.hasText(device.getWorkspaceId())) {
             log.warn("Device {} has no workspace ID for mode code reason update", request.getFrom());
-            return;
+            return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
         }
 
         // Process mode code reason update
@@ -891,10 +892,12 @@ public class SDKDeviceService extends AbstractDeviceService {
             log.info("Device {} mode code reason updated to: {}", request.getFrom(), request.getData().getModeCodeReason());
             // You can add custom logic here to handle mode code reason changes
         }
+
+        return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
     }
 
     @Override
-    public void dockDroneRthMode(TopicStateRequest<DockDroneRthMode> request, MessageHeaders headers) {
+    public TopicStateResponse<MqttReply> dockDroneRthMode(TopicStateRequest<DockDroneRthMode> request, MessageHeaders headers) {
         log.info("Received RTH mode update from {} with mode: {}",
             request.getFrom(), request.getData().getRthMode());
 
@@ -902,13 +905,13 @@ public class SDKDeviceService extends AbstractDeviceService {
         Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getFrom());
         if (deviceOpt.isEmpty()) {
             log.warn("Device {} not found online for RTH mode update", request.getFrom());
-            return;
+            return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
         }
 
         DeviceDTO device = deviceOpt.get();
         if (!StringUtils.hasText(device.getWorkspaceId())) {
             log.warn("Device {} has no workspace ID for RTH mode update", request.getFrom());
-            return;
+            return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
         }
 
         // Process RTH mode update
@@ -916,10 +919,12 @@ public class SDKDeviceService extends AbstractDeviceService {
             log.info("Device {} RTH mode updated to: {}", request.getFrom(), request.getData().getRthMode());
             // You can add custom logic here to handle RTH mode changes
         }
+
+        return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
     }
 
     @Override
-    public void dockDroneCommanderFlightHeight(TopicStateRequest<DockDroneCommanderFlightHeight> request, MessageHeaders headers) {
+    public TopicStateResponse<MqttReply> dockDroneCommanderFlightHeight(TopicStateRequest<DockDroneCommanderFlightHeight> request, MessageHeaders headers) {
         log.info("Received commander flight height update from {} with height: {}",
             request.getFrom(), request.getData().getCommanderFlightHeight());
 
@@ -927,13 +932,13 @@ public class SDKDeviceService extends AbstractDeviceService {
         Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getFrom());
         if (deviceOpt.isEmpty()) {
             log.warn("Device {} not found online for commander flight height update", request.getFrom());
-            return;
+            return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
         }
 
         DeviceDTO device = deviceOpt.get();
         if (!StringUtils.hasText(device.getWorkspaceId())) {
             log.warn("Device {} has no workspace ID for commander flight height update", request.getFrom());
-            return;
+            return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
         }
 
         // Process commander flight height update
@@ -942,10 +947,12 @@ public class SDKDeviceService extends AbstractDeviceService {
                 request.getFrom(), request.getData().getCommanderFlightHeight());
             // You can add custom logic here to handle flight height changes
         }
+
+        return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
     }
 
     @Override
-    public void dockDroneCommanderModeLostAction(TopicStateRequest<DockDroneCommanderModeLostAction> request, MessageHeaders headers) {
+    public TopicStateResponse<MqttReply> dockDroneCommanderModeLostAction(TopicStateRequest<DockDroneCommanderModeLostAction> request, MessageHeaders headers) {
         log.info("Received commander mode lost action update from {} with action: {}",
             request.getFrom(), request.getData().getCommanderModeLostAction());
 
@@ -953,13 +960,13 @@ public class SDKDeviceService extends AbstractDeviceService {
         Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getFrom());
         if (deviceOpt.isEmpty()) {
             log.warn("Device {} not found online for commander mode lost action update", request.getFrom());
-            return;
+            return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
         }
 
         DeviceDTO device = deviceOpt.get();
         if (!StringUtils.hasText(device.getWorkspaceId())) {
             log.warn("Device {} has no workspace ID for commander mode lost action update", request.getFrom());
-            return;
+            return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
         }
 
         // Process commander mode lost action update
@@ -968,6 +975,8 @@ public class SDKDeviceService extends AbstractDeviceService {
                 request.getFrom(), request.getData().getCommanderModeLostAction());
             // You can add custom logic here to handle commander mode lost action changes
         }
+
+        return new TopicStateResponse<MqttReply>().setData(MqttReply.success());
     }
 
     @Override
