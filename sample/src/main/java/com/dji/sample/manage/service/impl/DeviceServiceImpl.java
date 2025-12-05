@@ -338,7 +338,22 @@ public class DeviceServiceImpl implements IDeviceService {
         int count = mapper.selectCount(
                 new LambdaQueryWrapper<DeviceEntity>()
                         .eq(DeviceEntity::getDeviceSn, device.getDeviceSn()));
-        return count > 0 ? updateDevice(device) : saveDevice(device) > 0;
+        if (count > 0) {
+            return updateDevice(device);
+        }
+
+        // Try to insert, handle potential duplicate key
+        try {
+            return saveDevice(device) > 0;
+        } catch (Exception e) {
+            // Handle duplicate key exception by attempting an update
+            if (e.getMessage() != null && e.getMessage().contains("Duplicate entry")) {
+                log.warn("Duplicate device detected during insert, attempting update instead: {}", device.getDeviceSn());
+                return updateDevice(device);
+            }
+            log.error("Failed to save device: {}", device.getDeviceSn(), e);
+            throw e;
+        }
     }
 
     /**
