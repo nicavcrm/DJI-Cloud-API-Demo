@@ -84,6 +84,7 @@ VALUES
 	(43,1,78,0,'H30',NULL),
 	(44,1,78,1,'H30T',NULL),
 	(45,0,103,0,'Matrice 400',NULL),
+	(46,0,176,0,'M4D-VA','Matrice 4D Vision Assist')
 	;
 
 /*!40000 ALTER TABLE `dji_connect_manage_device_dictionary` ENABLE KEYS */;
