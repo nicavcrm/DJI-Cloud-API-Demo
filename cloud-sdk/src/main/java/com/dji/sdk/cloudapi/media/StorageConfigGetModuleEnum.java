@@ -13,7 +13,9 @@ import java.util.Arrays;
  */
 public enum StorageConfigGetModuleEnum {
 
-    MEDIA(0);
+    MEDIA(0),
+
+    STORAGE(2);
 
     private final int module;
 
