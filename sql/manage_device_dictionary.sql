@@ -69,22 +69,24 @@ VALUES
 	(27,3,2,0,'DJI Dock2',NULL),
 	(28,0,91,0,'M3D',NULL),
 	(29,0,91,1,'M3TD',NULL),
-	(30,1,80,0,'M3D Camera',NULL)
+	(30,1,80,0,'M3D Camera',NULL),
 	(31,1,81,0,'M3TD Camera',NULL),
 	(33,0,99,0,'M4E',NULL),
 	(34,0,99,1,'M4T',NULL),
 	(35,1,88,0,'M4E Camera',NULL),
-	(36,1,89,0,'M4T Camera ',NULL),
-	(37,2,174,0,'DJI RC Plus 2','Remote control for Matrice 4 '),
+	(36,1,89,0,'M4T Camera',NULL),
+	(37,2,174,0,'DJI RC Plus 2','Remote control for Matrice 4 series'),
 	(38,0,100,0,'M4D',NULL),
 	(39,0,100,1,'M4TD',NULL),
 	(40,1,98,0,'M4D Camera',NULL),
 	(41,1,99,0,'M4TD Camera',NULL),
 	(42,3,3,0,'Dock3',NULL),
-	(43,1,78,0,'H30',NULL),
-	(44,1,78,1,'H30T',NULL),
+	(43,1,82,0,'H30',NULL),
+	(44,1,83,0,'H30T',NULL),
 	(45,0,103,0,'Matrice 400',NULL),
-	(46,0,176,0,'M4D-VA','Matrice 4D Vision Assist')
+	(46,1,176,0,'Vision Assist','M3D/M3TD/M4D/M4TD obstacle avoidance camera'),
+	(47,0,77,3,'Mavic 3TA',NULL),
+	(48,1,129,0,'Mavic 3TA Camera',NULL)
 	;
 
 /*!40000 ALTER TABLE `dji_connect_manage_device_dictionary` ENABLE KEYS */;

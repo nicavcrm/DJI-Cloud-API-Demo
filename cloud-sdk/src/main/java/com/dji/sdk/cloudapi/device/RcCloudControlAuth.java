@@ -1,5 +1,6 @@
 package com.dji.sdk.cloudapi.device;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.constraints.NotNull;
@@ -11,6 +12,7 @@ public class RcCloudControlAuth {
 
     @NotNull
     @JsonProperty("cloud_control_auth")
+    @JsonAlias("is_cloud_control_auth")
     private Object cloudControlAuth;
 
     public RcCloudControlAuth() {

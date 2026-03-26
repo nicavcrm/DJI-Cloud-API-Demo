@@ -32,6 +32,10 @@ public class DockLiveErrorStatus {
     @JsonCreator
     public DockLiveErrorStatus(int code) {
         this.success = MqttReply.CODE_SUCCESS == code;
+        if (this.success) {
+            this.errorCode = LiveErrorCodeEnum.SUCCESS;
+            return;
+        }
         this.source = ErrorCodeSourceEnum.find(code / MOD);
         this.errorCode = LiveErrorCodeEnum.find(code % MOD);
     }
