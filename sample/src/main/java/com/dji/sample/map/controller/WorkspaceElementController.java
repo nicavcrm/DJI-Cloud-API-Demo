@@ -9,6 +9,8 @@ import com.dji.sdk.cloudapi.map.GetMapElementsResponse;
 import com.dji.sdk.cloudapi.map.UpdateMapElementRequest;
 import com.dji.sdk.cloudapi.map.api.IHttpMapService;
 import com.dji.sdk.common.HttpResultResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +30,8 @@ import static com.dji.sample.component.AuthInterceptor.TOKEN_CLAIM;
  */
 @RestController
 public class WorkspaceElementController implements IHttpMapService {
+
+    private static final Logger log = LoggerFactory.getLogger(WorkspaceElementController.class);
 
     @Autowired
     private IWorkspaceElementService elementService;
@@ -74,15 +78,20 @@ public class WorkspaceElementController implements IHttpMapService {
     @Override
     public HttpResultResponse<CreateMapElementResponse> createMapElement(String workspaceId, String groupId,
                      @Valid CreateMapElementRequest elementCreate, HttpServletRequest req, HttpServletResponse rsp) {
+        log.info("[JAVA] MapElement::store workspace={} group={} elementId={} name={} ua={}",
+                workspaceId, groupId, elementCreate.getId(), elementCreate.getName(),
+                req.getHeader("User-Agent") != null ? req.getHeader("User-Agent").substring(0, Math.min(80, req.getHeader("User-Agent").length())) : "null");
+
         CustomClaim claims = (CustomClaim) req.getAttribute(TOKEN_CLAIM);
-        // Set the creator of the element
         elementCreate.getResource().setUsername(claims.getUsername());
 
         HttpResultResponse response = elementService.saveElement(workspaceId, groupId, elementCreate, true);
         if (response.getCode() != HttpResultResponse.CODE_SUCCESS) {
+            log.warn("[JAVA] MapElement::store FAILED elementId={} response={}", elementCreate.getId(), response.getMessage());
             return response;
         }
 
+        log.info("[JAVA] MapElement::store OK elementId={}", elementCreate.getId());
         return HttpResultResponse.success(new CreateMapElementResponse().setId(elementCreate.getId()));
     }
 
@@ -96,13 +105,19 @@ public class WorkspaceElementController implements IHttpMapService {
      */
     @Override
     public HttpResultResponse updateMapElement(String workspaceId, String elementId, @Valid UpdateMapElementRequest elementUpdate, HttpServletRequest req, HttpServletResponse rsp) {
+        log.info("[JAVA] MapElement::update workspace={} elementId={} name={} ua={}",
+                workspaceId, elementId, elementUpdate.getName(),
+                req.getHeader("User-Agent") != null ? req.getHeader("User-Agent").substring(0, Math.min(80, req.getHeader("User-Agent").length())) : "null");
+
         CustomClaim claims = (CustomClaim) req.getAttribute(TOKEN_CLAIM);
 
         HttpResultResponse response = elementService.updateElement(workspaceId, elementId, elementUpdate, claims.getUsername(), true);
         if (response.getCode() != HttpResultResponse.CODE_SUCCESS) {
+            log.warn("[JAVA] MapElement::update FAILED elementId={} response={}", elementId, response.getMessage());
             return response;
         }
 
+        log.info("[JAVA] MapElement::update OK elementId={}", elementId);
         return response;
     }
 

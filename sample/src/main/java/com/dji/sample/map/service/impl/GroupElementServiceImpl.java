@@ -80,12 +80,16 @@ public class GroupElementServiceImpl implements IGroupElementService {
         if (!update) {
             return false;
         }
-        // delete all coordinates according to element id.
-        boolean delCoordinate = elementCoordinateService.deleteCoordinateByElementId(elementId);
-        // save coordinate
-        boolean saveCoordinate = elementCoordinateService.saveCoordinate(
-                elementUpdate.getContent().getGeometry().convertToList(), elementId);
-        return delCoordinate & saveCoordinate;
+
+        // Update coordinates only if geometry is provided
+        ElementContent content = elementUpdate.getContent();
+        if (content != null && content.getGeometry() != null) {
+            elementCoordinateService.deleteCoordinateByElementId(elementId);
+            elementCoordinateService.saveCoordinate(
+                    content.getGeometry().convertToList(), elementId);
+        }
+
+        return true;
     }
 
     @Override
@@ -206,11 +210,24 @@ public class GroupElementServiceImpl implements IGroupElementService {
             return;
         }
 
-        groupElement.setElementName(elementUpdate.getName());
-        groupElement.setElementType(ElementTypeEnum.findVal(elementUpdate.getContent().getGeometry().getType()));
-        groupElement.setColor(elementUpdate.getContent().getProperties().getColor());
+        if (elementUpdate.getName() != null) {
+            groupElement.setElementName(elementUpdate.getName());
+        }
 
-        Boolean clampToGround = elementUpdate.getContent().getProperties().getClampToGround();
-        groupElement.setClampToGround(clampToGround);
+        ElementContent content = elementUpdate.getContent();
+        if (content != null) {
+            if (content.getGeometry() != null && content.getGeometry().getType() != null) {
+                groupElement.setElementType(ElementTypeEnum.findVal(content.getGeometry().getType()));
+            }
+            if (content.getProperties() != null) {
+                if (content.getProperties().getColor() != null) {
+                    groupElement.setColor(content.getProperties().getColor());
+                }
+                Boolean clampToGround = content.getProperties().getClampToGround();
+                if (clampToGround != null) {
+                    groupElement.setClampToGround(clampToGround);
+                }
+            }
+        }
     }
 }
